@@ -1,0 +1,17 @@
+name: VirusTotal check — public BHcmd v1.2.7
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Hash-verify and scan the public installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out pinned public release scan script
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Look up / submit exact public release to VirusTotal
+        env:
+          VIRUS_TOTAL: ${{ secrets.VIRUS_TOTAL }}
+        run: python3 .github/scripts/virustotal_public_v127.py
