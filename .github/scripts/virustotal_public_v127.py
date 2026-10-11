@@ -84,8 +84,8 @@ def main() -> None:
     if not KEY:
         raise RuntimeError("Missing repository secret VIRUS_TOTAL")
     summary("## BHcmd v1.2.7 — VirusTotal verification")
-    summary(f"- File: \`{FILE}\`")
-    summary(f"- SHA-256: \`{DIGEST}\`")
+    summary(f"- File: `{FILE}`")
+    summary(f"- SHA-256: `{DIGEST}`")
     summary(f"- Report: {REPORT}")
     status, file_data = vt("GET", "/files/" + DIGEST)
     if status == 200:
@@ -104,7 +104,7 @@ def main() -> None:
         target = urllib.parse.urlunparse(parsed._replace(scheme="https"))
         parsed = urllib.parse.urlparse(target)
     if parsed.scheme != "https" or parsed.hostname not in ("www.virustotal.com", "virustotal.com"):
-        raise RuntimeError("VirusTotal returned an untrusted large-file upload URL")
+        raise RuntimeError("VirusTotal returned an untrusted large-file upload URL host: " + str(parsed.hostname))
     with tempfile.TemporaryDirectory(prefix="bhcmd-vt-") as directory:
         path = pathlib.Path(directory) / FILE
         download(path)
