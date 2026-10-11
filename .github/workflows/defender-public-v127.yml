@@ -1,0 +1,51 @@
+name: BHcmd v1.2.7 — independent Defender check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  defender:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Verify release and check Defender availability
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $uri = 'https://github.com/trjacksongb/BHcmd/releases/download/v1.2.7/trjacksongb.BitHeroesCommand-win-Setup.exe'
+          $expected = 'BA35C43324586FA001DC08C61B3241198B9B4768D7C7FC4158E06BEEBFE6CFF6'
+          $file = Join-Path $env:RUNNER_TEMP 'BHcmd-v1.2.7-public-Setup.exe'
+          Invoke-WebRequest -Uri $uri -OutFile $file -MaximumRedirection 5
+          $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash
+          if ($actual -ne $expected) { throw 'Public release SHA-256 verification failed' }
+          Add-Content $env:GITHUB_STEP_SUMMARY '## BHcmd v1.2.7 — Windows Defender independent check'
+          Add-Content $env:GITHUB_STEP_SUMMARY "- SHA-256 verified: \`$actual\`"
+          $sig = Get-AuthenticodeSignature -LiteralPath $file
+          Add-Content $env:GITHUB_STEP_SUMMARY "- Installer signature status: $($sig.Status)"
+          try {
+            $status = Get-MpComputerStatus -ErrorAction Stop
+            Add-Content $env:GITHUB_STEP_SUMMARY "- Defender antivirus available: $($status.AntivirusEnabled)"
+            Add-Content $env:GITHUB_STEP_SUMMARY "- Defender engine: $($status.AMEngineVersion)"
+            Add-Content $env:GITHUB_STEP_SUMMARY "- Defender signatures updated: $($status.AntivirusSignatureLastUpdated)"
+          } catch {
+            Add-Content $env:GITHUB_STEP_SUMMARY '- Defender cmdlets not available on this GitHub runner; no scan or clean verdict claimed.'
+            exit 0
+          }
+          if (-not $status.AntivirusEnabled) {
+            Add-Content $env:GITHUB_STEP_SUMMARY '- Defender antivirus disabled on the GitHub runner; no clean scan verdict claimed.'
+            exit 0
+          }
+          try {
+            Start-MpScan -ScanType CustomScan -ScanPath $file -ErrorAction Stop
+            $detections = @(Get-MpThreatDetection -ErrorAction SilentlyContinue | Where-Object {
+              @($_.Resources) -match [regex]::Escape($file)
+            })
+            if ($detections.Count -gt 0) {
+              Add-Content $env:GITHUB_STEP_SUMMARY "- Defender detections: $($detections.Count) (investigation required)"
+            } else {
+              Add-Content $env:GITHUB_STEP_SUMMARY '- Defender on-demand scan completed; no detection was listed for this exact file at scan time.'
+            }
+          } catch {
+            Add-Content $env:GITHUB_STEP_SUMMARY '- Defender on-demand scan was unavailable or failed; no clean scan verdict claimed.'
+            Write-Host "Defender did not produce a verified scan result"
+          }
