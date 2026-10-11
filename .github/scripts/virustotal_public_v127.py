@@ -103,14 +103,14 @@ def main() -> None:
     if parsed.scheme == "http" and parsed.hostname in ("www.virustotal.com", "virustotal.com"):
         target = urllib.parse.urlunparse(parsed._replace(scheme="https"))
         parsed = urllib.parse.urlparse(target)
-    if parsed.scheme != "https" or parsed.hostname not in ("www.virustotal.com", "virustotal.com"):
+    if parsed.scheme != "https" or parsed.hostname not in ("www.virustotal.com", "virustotal.com", "bigfiles.virustotal.com"):
         raise RuntimeError("VirusTotal returned an untrusted large-file upload URL host: " + str(parsed.hostname))
     with tempfile.TemporaryDirectory(prefix="bhcmd-vt-") as directory:
         path = pathlib.Path(directory) / FILE
         download(path)
         # Shell is never involved, response is collected, API key is never logged.
         cmd = [
-            "curl", "--silent", "--show-error", "--fail-with-body", "--location",
+            "curl", "--silent", "--show-error", "--fail-with-body",
             "--connect-timeout", "20", "--max-time", "360",
             "--header", "accept: application/json",
             "--header", "x-apikey: " + KEY,
