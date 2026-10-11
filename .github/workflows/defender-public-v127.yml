@@ -25,14 +25,17 @@ jobs:
           try {
             $status = Get-MpComputerStatus -ErrorAction Stop
             Add-Content $env:GITHUB_STEP_SUMMARY "- Defender antivirus available: $($status.AntivirusEnabled)"
+          Write-Host "Defender antivirus available: $($status.AntivirusEnabled), engine: $($status.AMEngineVersion)"
             Add-Content $env:GITHUB_STEP_SUMMARY "- Defender engine: $($status.AMEngineVersion)"
             Add-Content $env:GITHUB_STEP_SUMMARY "- Defender signatures updated: $($status.AntivirusSignatureLastUpdated)"
           } catch {
             Add-Content $env:GITHUB_STEP_SUMMARY '- Defender cmdlets not available on this GitHub runner; no scan or clean verdict claimed.'
+            Write-Host 'Defender cmdlets unavailable; no scan or verdict'
             exit 0
           }
           if (-not $status.AntivirusEnabled) {
             Add-Content $env:GITHUB_STEP_SUMMARY '- Defender antivirus disabled on the GitHub runner; no clean scan verdict claimed.'
+            Write-Host 'Defender disabled on GitHub runner; no scan or verdict'
             exit 0
           }
           try {
@@ -42,8 +45,10 @@ jobs:
             })
             if ($detections.Count -gt 0) {
               Add-Content $env:GITHUB_STEP_SUMMARY "- Defender detections: $($detections.Count) (investigation required)"
+            Write-Host "Defender detected $($detections.Count) threats"
             } else {
               Add-Content $env:GITHUB_STEP_SUMMARY '- Defender on-demand scan completed; no detection was listed for this exact file at scan time.'
+            Write-Host 'Defender on-demand scan completed; no detection found for the exact pinned installer'
             }
           } catch {
             Add-Content $env:GITHUB_STEP_SUMMARY '- Defender on-demand scan was unavailable or failed; no clean scan verdict claimed.'
