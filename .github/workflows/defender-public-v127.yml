@@ -19,7 +19,7 @@ jobs:
           $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash
           if ($actual -ne $expected) { throw 'Public release SHA-256 verification failed' }
           Add-Content $env:GITHUB_STEP_SUMMARY '## BHcmd v1.2.7 — Windows Defender independent check'
-          Add-Content $env:GITHUB_STEP_SUMMARY "- SHA-256 verified: \`$actual\`"
+          Add-Content $env:GITHUB_STEP_SUMMARY ("- SHA-256 verified: " + $actual)
           $sig = Get-AuthenticodeSignature -LiteralPath $file
           Add-Content $env:GITHUB_STEP_SUMMARY "- Installer signature status: $($sig.Status)"
           try {
