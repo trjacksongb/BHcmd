@@ -63,6 +63,13 @@ def report(data: dict) -> None:
     if isinstance(date, int):
         summary("- Last analysis: " + datetime.datetime.fromtimestamp(
             date, datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
+    engines = attrs.get("last_analysis_results") or {}
+    for engine, details in sorted(engines.items()):
+        if not isinstance(details, dict) or details.get("category") not in ("malicious", "suspicious"):
+            continue
+        category = str(details.get("category", "unknown"))[:30].replace("\\n", " ")
+        result = str(details.get("result", "unspecified"))[:160].replace("\\n", " ")
+        summary(f"- Flagged engine: {engine[:70]} — {category} — {result}")
 
 
 def download(path: pathlib.Path) -> None:
