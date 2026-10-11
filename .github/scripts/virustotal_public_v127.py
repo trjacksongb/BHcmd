@@ -63,6 +63,22 @@ def report(data: dict) -> None:
     if isinstance(date, int):
         summary("- Last analysis: " + datetime.datetime.fromtimestamp(
             date, datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
+    threat = attrs.get("popular_threat_classification") or {}
+    verdicts = attrs.get("sandbox_verdicts") or {}
+    summary("- File type: " + str(attrs.get("type_description", "unknown"))[:80])
+    summary("- Tags: " + ", ".join(str(t)[:80] for t in (attrs.get("tags") or [])[:15]))
+    names = []
+    for vendor, details in sorted(verdicts.items()):
+        if not isinstance(details, dict):
+            continue
+        label = str(details.get("category", details.get("malware_classification", "unknown")))[:80]
+        names.append(f"{str(vendor)[:60]}={label}")
+    summary("- Sandbox verdicts provided: " + (", ".join(names) if names else "none"))
+    if threat and isinstance(threat, dict):
+        summary("- Community threat category: " + str(threat.get("suggested_threat_label", "not provided"))[:120])
+    sig = attrs.get("signature_info") or {}
+    if isinstance(sig, dict):
+        summary("- Signature metadata: " + (", ".join(sorted(str(k) for k in sig.keys())[:12]) or "none"))
     engines = attrs.get("last_analysis_results") or {}
     for engine, details in sorted(engines.items()):
         if not isinstance(details, dict) or details.get("category") not in ("malicious", "suspicious"):
